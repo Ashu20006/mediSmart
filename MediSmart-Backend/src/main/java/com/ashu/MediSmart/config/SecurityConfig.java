@@ -40,7 +40,7 @@ public class SecurityConfig {
         http.cors(cors -> cors.configurationSource(request -> {
             CorsConfiguration config = new CorsConfiguration();
             config.setAllowCredentials(true);
-            config.setAllowedOrigins(List.of("http://localhost:3000","https://medi-smart-frontend-swart.vercel.app"));
+            config.setAllowedOrigins(List.of("http://localhost:3000","https://medi-smart-frontend-swart.vercel.app,https://medi-smart-eta.vercel.app/"));
             config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
             config.setAllowedHeaders(List.of("Origin", "Content-Type", "Accept",
                     "Authorization", "X-Requested-With",

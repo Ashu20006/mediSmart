@@ -1,0 +1,32 @@
+# Editor/OS
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.iml
+
+# Logs & env
+*.log
+*.tmp
+.env
+.env.*
+*.local
+
+# Frontend outputs
+MediSmart-frontend-Test/node_modules/
+MediSmart-frontend-Test/.next/
+MediSmart-frontend-Test/out/
+MediSmart-frontend-Test/build/
+MediSmart-frontend-Test/.turbo/
+MediSmart-frontend-Test/.vercel/
+MediSmart-frontend-Test/.tsbuildinfo
+
+# Backend outputs
+MediSmart-Backend-Test/target/
+MediSmart-Backend-Test/.mvn/wrapper/maven-wrapper.jar
+
+# IDE project files in submodules
+MediSmart-Backend-Test/.idea/
+MediSmart-Backend-Test/.vscode/
+MediSmart-frontend-Test/.idea/
+MediSmart-frontend-Test/.vscode/

@@ -7,6 +7,8 @@ import { DoctorSearchTab } from "@/components/dashboards/patient/doctor-search-t
 import { AppointmentsTab } from "@/components/dashboards/patient/appointments-tab"
 import { PrescriptionsTab } from "@/components/dashboards/patient/prescriptions-tab"
 import { FeedbackTab } from "@/components/dashboards/patient/feedback-tab"
+import { ProfileSettingsTab } from "@/components/dashboards/patient/profile-settings-tab"
+import { AccountSettingsTab } from "@/components/dashboards/patient/account-settings-tab"
 import { SOSButton } from "@/components/dashboards/patient/sos-button"
 import { Menu } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -69,6 +71,10 @@ export function PatientDashboard() {
         return <PrescriptionsTab />
       case "feedback":
         return <FeedbackTab />
+      case "profile":
+        return <ProfileSettingsTab />
+      case "account":
+        return <AccountSettingsTab />
       default:
         return <AppointmentsTab />
     }

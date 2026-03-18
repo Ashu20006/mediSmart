@@ -7,6 +7,8 @@ import { AppointmentRequestsTab } from "@/components/dashboards/doctor/appointme
 import { PrescriptionsTab } from "@/components/dashboards/doctor/prescriptions-tab"
 import { PatientDetailsTab } from "@/components/dashboards/doctor/patient-details-tab"
 import { ScheduleTab } from "@/components/dashboards/doctor/schedule-tab"
+import { ProfileSettingsTab } from "@/components/dashboards/patient/profile-settings-tab"
+import { AccountSettingsTab } from "@/components/dashboards/patient/account-settings-tab"
 import { Menu, Bell } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
@@ -61,6 +63,10 @@ export function DoctorDashboard() {
         return <PatientDetailsTab />
       case "schedule":
         return <ScheduleTab />
+      case "profile":
+        return <ProfileSettingsTab />
+      case "account":
+        return <AccountSettingsTab />
       default:
         return <AppointmentRequestsTab />
     }

@@ -34,7 +34,7 @@ export function PatientDetailsTab() {
           return
         }
 
-        const res = await fetch(`${API_BASE_URL}/api/appointments/doctor/${doctorId}`, {
+        const res = await fetch(`${API_BASE_URL}/api/appointments/doctor/${doctorId}/patients`, {
           headers: { Authorization: `Bearer ${token}` },
         })
         if (!res.ok) {
@@ -43,32 +43,21 @@ export function PatientDetailsTab() {
         }
         const data = await res.json()
 
-        // Build unique patients list from appointments
-        const map = new Map<number, any>()
-        for (const a of Array.isArray(data) ? data : []) {
-          const p = a.patient
-          if (!p || p.id == null) continue
-          const existing = map.get(p.id)
-          const apptDate = a.appointmentDate ? new Date(a.appointmentDate) : null
-          const lastVisit = apptDate ? apptDate.toISOString().slice(0, 10) : undefined
-          const merged = {
-            id: p.id,
-            name: p.name || "Patient",
-            age: p.age ?? "",
-            gender: p.gender ?? "",
-            phone: p.phoneNumber ?? "",
-            email: p.email ?? "",
-            address: p.location ?? "",
-            lastVisit: lastVisit || existing?.lastVisit || "",
-            condition: p.specialty || "",
-            image: "/placeholder.svg",
-            medicalHistory: existing?.medicalHistory || [],
-            prescriptions: existing?.prescriptions || [],
-          }
-          map.set(p.id, merged)
-        }
+        const patientsArr = (Array.isArray(data) ? data : []).map((p: any) => ({
+          id: p.id,
+          name: p.name || "Patient",
+          age: p.age ?? "",
+          gender: p.gender ?? "",
+          phone: p.phoneNumber ?? "",
+          email: p.email ?? "",
+          address: p.location ?? "",
+          lastVisit: p.lastVisit || "",
+          condition: "",
+          image: "/default-profile-avatar.png",
+          medicalHistory: [],
+          prescriptions: [],
+        }))
 
-        const patientsArr = Array.from(map.values())
         setPatients(patientsArr)
         setSelectedPatient(patientsArr[0] || null)
       } catch (e: any) {

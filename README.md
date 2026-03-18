@@ -1,9 +1,12 @@
 # MediSmart
 Full-stack telehealth app: Spring Boot API + Next.js frontend with JWT auth, appointments, doctor recommendations, medical records, password reset/OTP email, and live consultations (Agora video + STOMP chat).
 
+## Live links
+ https://medi-smart-frontend-swart.vercel.app
+
 ## Repository layout
-- MediSmart-Backend-Test/  - Spring Boot 3.5 service (MongoDB, Security/JWT, WebSocket/STOMP, Agora token generation).
-- MediSmart-frontend-Test/ - Next.js 14 client (React 18, Tailwind, Radix UI) consuming the backend APIs.
+- MediSmart-Backend/   - Spring Boot 3.5 service (MongoDB, Security/JWT, WebSocket/STOMP, Agora token generation).
+- MediSmart-frontend/  - Next.js 14 client (React 18, Tailwind, Radix UI) consuming the backend APIs.
 
 ## Tech stack
 - Backend: Spring Boot, Spring Security + JWT, Spring Data MongoDB, Spring Mail, WebSocket/STOMP, Agora Authentication SDK, Lombok.
@@ -17,7 +20,7 @@ Full-stack telehealth app: Spring Boot API + Next.js frontend with JWT auth, app
 - Agora project App ID and App Certificate
 
 ## Environment configuration
-Backend config file: `MediSmart-Backend-Test/src/main/resources/application.properties`  
+Backend config file: `MediSmart-Backend/src/main/resources/application.properties`  
 Use environment variables (recommended) instead of hard-coded secrets:
 ```
 spring.application.name=MediSmart
@@ -36,23 +39,23 @@ spring.mail.properties.mail.smtp.starttls.enable=true
 agora.app-id=${AGORA_APP_ID}
 agora.app-certificate=${AGORA_APP_CERTIFICATE}
 ```
-Frontend API base URL: edit `MediSmart-frontend-Test/config/api.ts` (example: `http://localhost:8080`).
+Frontend API base URL: set `NEXT_PUBLIC_API_BASE_URL` in `MediSmart-frontend/.env.local` (defaults to `https://medismart.onrender.com`). Example for local dev: `http://localhost:8080`.
 
 ## Running locally
 Backend:
 ```
-cd MediSmart-Backend-Test
+cd MediSmart-Backend
 ./mvnw spring-boot:run      # or mvnw.cmd spring-boot:run on Windows
 ```
 Runs on http://localhost:8080.
 
 Frontend:
 ```
-cd MediSmart-frontend-Test
+cd MediSmart-frontend
 npm install
 npm run dev                 # serves on http://localhost:3000
 ```
-If the backend host or port differs, update `config/api.ts`.
+If the backend host or port differs, update `config/api.ts` or set `NEXT_PUBLIC_API_BASE_URL`.
 
 ## Feature map (where to look)
 - Auth & JWT: `AuthController`, `JwtAuthenticationFilter`, `JwtUtil`
@@ -64,9 +67,9 @@ If the backend host or port differs, update `config/api.ts`.
 
 ## Scripts and builds
 - Backend tests: `./mvnw test`
-- Backend package: `./mvnw package` (artifact in `MediSmart-Backend-Test/target/`)
+- Backend package: `./mvnw package` (artifact in `MediSmart-Backend/target/`)
 - Frontend lint: `npm run lint`
-- Frontend production build: `npm run build` (output in `MediSmart-frontend-Test/.next/`)
+- Frontend production build: `npm run build` (output in `MediSmart-frontend/.next/`)
 
 ## Deployment notes
 - Keep secrets in environment variables or a secrets manager; do not commit real values.

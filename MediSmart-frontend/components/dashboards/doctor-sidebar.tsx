@@ -60,7 +60,36 @@ export function DoctorSidebar({ activeTab, onTabChange, isOpen, onClose }: Docto
     { id: "prescriptions", label: "Prescriptions", icon: FileText },
     { id: "patients", label: "Patient Details", icon: Users },
     { id: "schedule", label: "My Schedule", icon: Clock },
+    { id: "profile", label: "Profile Settings", icon: User },
+    { id: "account", label: "Account Settings", icon: Settings },
   ]
+
+  const [stats, setStats] = useState({ appointments: 0, pending: 0, prescriptions: 0 })
+
+  useEffect(() => {
+    const loadStats = async () => {
+      try {
+        const storedUser = localStorage.getItem("user")
+        const doctorId = storedUser ? JSON.parse(storedUser)?.id : null
+        const token = localStorage.getItem("token") || ""
+        if (!doctorId || !token) return
+
+        const res = await fetch(`${API_BASE_URL}/api/appointments/doctor/${doctorId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        if (!res.ok) return
+        const data = await res.json()
+        const today = new Date().toISOString().slice(0, 10)
+        const appointmentsToday = data.filter((a: any) => (a.appointmentDate || "").slice(0, 10) === today)
+        const pending = appointmentsToday.filter((a: any) => (a.status || "PENDING").toUpperCase() === "PENDING").length
+        const prescriptions = data.filter((a: any) => a.medicalRecord && a.medicalRecord.prescription).length
+        setStats({ appointments: appointmentsToday.length, pending, prescriptions })
+      } catch (err) {
+        console.error("Stats load failed", err)
+      }
+    }
+    loadStats()
+  }, [])
 
   return (
     <>
@@ -115,15 +144,15 @@ export function DoctorSidebar({ activeTab, onTabChange, isOpen, onClose }: Docto
               <div className="space-y-3">
                 <div className="flex justify-between">
                   <span className="text-sm text-muted-foreground">Appointments</span>
-                  <span className="font-medium">8</span>
+                  <span className="font-medium">{stats.appointments}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-sm text-muted-foreground">Pending Requests</span>
-                  <span className="font-medium">3</span>
+                  <span className="font-medium">{stats.pending}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-sm text-muted-foreground">Prescriptions</span>
-                  <span className="font-medium">12</span>
+                  <span className="font-medium">{stats.prescriptions}</span>
                 </div>
               </div>
             </CardContent>
@@ -151,14 +180,6 @@ export function DoctorSidebar({ activeTab, onTabChange, isOpen, onClose }: Docto
 
           {/* Account Actions */}
           <div className="space-y-2 pt-4 border-t border-border">
-            <Button variant="ghost" className="w-full justify-start">
-              <User className="h-4 w-4 mr-3" />
-              Profile Settings
-            </Button>
-            <Button variant="ghost" className="w-full justify-start">
-              <Settings className="h-4 w-4 mr-3" />
-              Account Settings
-            </Button>
              <Button
         variant="ghost"
         className="w-full justify-start text-destructive hover:text-destructive"

@@ -20,6 +20,8 @@ export function AppointmentRequestsTab() {
   const [error, setError] = useState<string | null>(null)
   const [scheduleOpen, setScheduleOpen] = useState(false)
   const [scheduleTime, setScheduleTime] = useState("")
+  const [scheduleDate, setScheduleDate] = useState("")
+  const [scheduleMode, setScheduleMode] = useState<"approve" | "reschedule">("approve")
   const [selectedAppointmentId, setSelectedAppointmentId] = useState<string | null>(null)
 
   useEffect(() => {
@@ -140,9 +142,11 @@ export function AppointmentRequestsTab() {
     }
   }
 
-  const openSchedule = (appointmentId: string) => {
+  const openSchedule = (appointmentId: string, date?: string, time?: string, mode: "approve" | "reschedule" = "approve") => {
     setSelectedAppointmentId(appointmentId)
-    setScheduleTime("")
+    setScheduleDate(date || "")
+    setScheduleTime(time || "")
+    setScheduleMode(mode)
     setScheduleOpen(true)
   }
 
@@ -154,27 +158,41 @@ export function AppointmentRequestsTab() {
 
     try {
       const token = localStorage.getItem("token") || ""
-      const res = await fetch(
-        `${API_BASE_URL}/api/appointments/${selectedAppointmentId}/schedule?time=${encodeURIComponent(scheduleTime)}`,
-        {
-          method: "PUT",
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      )
-      if (!res.ok) throw new Error("Failed to schedule appointment")
+      const endpoint =
+        scheduleMode === "approve"
+          ? `${API_BASE_URL}/api/appointments/${selectedAppointmentId}/schedule?time=${encodeURIComponent(scheduleTime)}`
+          : `${API_BASE_URL}/api/appointments/${selectedAppointmentId}/reschedule?time=${encodeURIComponent(
+              scheduleTime
+            )}${scheduleDate ? `&date=${scheduleDate}` : ""}`
+
+      const res = await fetch(endpoint, {
+        method: "PUT",
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      if (!res.ok) throw new Error(scheduleMode === "approve" ? "Failed to schedule appointment" : "Failed to reschedule")
       const updated = await res.json()
       setAppointments((prev) =>
         prev.map((a) =>
-          a.id === selectedAppointmentId ? { ...a, status: "APPROVED", appointmentTime: updated.appointmentTime } : a
+          a.id === selectedAppointmentId
+            ? {
+                ...a,
+                status: "APPROVED",
+                appointmentTime: updated.appointmentTime,
+                appointmentDate: updated.appointmentDate,
+              }
+            : a
         )
       )
       toast({
-        title: "Appointment scheduled",
-        description: `Scheduled at ${scheduleTime}.`,
+        title: scheduleMode === "approve" ? "Appointment scheduled" : "Appointment rescheduled",
+        description: scheduleDate
+          ? `Scheduled on ${scheduleDate} at ${scheduleTime}.`
+          : `Scheduled at ${scheduleTime}.`,
       })
       setScheduleOpen(false)
       setSelectedAppointmentId(null)
       setScheduleTime("")
+      setScheduleDate("")
     } catch (err: any) {
       toast({
         title: "Error",
@@ -251,18 +269,9 @@ export function AppointmentRequestsTab() {
                 <p className="text-sm text-muted-foreground">{reason}</p>
               </div>
 
+              {/* Actions */}
               {status === "PENDING" && (
                 <div className="flex space-x-2 pt-2">
-                  <Button size="sm" onClick={() => openSchedule(String(id))}>Approve & Schedule</Button>
-                  <Button size="sm" variant="outline" onClick={() => handleStatusChange(id, "REJECTED", patient)}>
-                    Reject
-                  </Button>
-                </div>
-              )}
-
-              {inAllTab && (
-                <div className="flex space-x-2 pt-2">
-                  <Button size="sm" disabled className="opacity-50 cursor-not-allowed">Pending</Button>
                   <Button size="sm" onClick={() => openSchedule(String(id))}>Approve & Schedule</Button>
                   <Button size="sm" variant="outline" onClick={() => handleStatusChange(id, "REJECTED", patient)}>
                     Reject
@@ -275,6 +284,37 @@ export function AppointmentRequestsTab() {
                   <Button size="sm" onClick={() => startConsultation(String(id))}>
                     <Video className="h-4 w-4 mr-2" />
                     Join Call
+                  </Button>
+                  <Badge className="ml-3 bg-green-100 text-green-800">Scheduled</Badge>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="ml-2"
+                    onClick={() => openSchedule(String(id), date, time === "Not scheduled" ? "" : time, "reschedule")}
+                  >
+                    Reschedule
+                  </Button>
+                </div>
+              )}
+
+              {status === "COMPLETED" && (
+                <div className="pt-2">
+                  <Badge className="bg-green-100 text-green-800">Completed</Badge>
+                </div>
+              )}
+
+              {status === "REJECTED" && (
+                <div className="pt-2">
+                  <Badge className="bg-red-100 text-red-800">Rejected</Badge>
+                </div>
+              )}
+
+              {inAllTab && status === "PENDING" && (
+                <div className="flex space-x-2 pt-2">
+                  <Button size="sm" disabled className="opacity-50 cursor-not-allowed">Pending</Button>
+                  <Button size="sm" onClick={() => openSchedule(String(id))}>Approve & Schedule</Button>
+                  <Button size="sm" variant="outline" onClick={() => handleStatusChange(id, "REJECTED", patient)}>
+                    Reject
                   </Button>
                 </div>
               )}
@@ -362,9 +402,18 @@ export function AppointmentRequestsTab() {
       <Dialog open={scheduleOpen} onOpenChange={setScheduleOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Schedule consultation time</DialogTitle>
+            <DialogTitle>{scheduleMode === "approve" ? "Schedule consultation time" : "Reschedule consultation"}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium">Select date</label>
+              <Input
+                type="date"
+                value={scheduleDate}
+                onChange={(e) => setScheduleDate(e.target.value)}
+                className="mt-1"
+              />
+            </div>
             <div>
               <label className="text-sm font-medium">Select time</label>
               <Input
@@ -377,7 +426,7 @@ export function AppointmentRequestsTab() {
             </div>
             <div className="flex justify-end gap-2">
               <Button variant="outline" onClick={() => setScheduleOpen(false)}>Cancel</Button>
-              <Button onClick={submitSchedule}>Save & Approve</Button>
+              <Button onClick={submitSchedule}>{scheduleMode === "approve" ? "Save & Approve" : "Save Reschedule"}</Button>
             </div>
           </div>
         </DialogContent>

@@ -1,8 +1,8 @@
 "use client"
-import API_BASE_URL from "@/config/api";
+import API_BASE_URL from "@/config/api"
 import type React from "react"
 
-import { useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
@@ -11,32 +11,117 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Star } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 
+type AppointmentOption = {
+  id: string
+  doctorName: string
+  appointmentDate?: string
+  status?: string
+}
+
+type FeedbackItem = {
+  id: string
+  appointmentId: string
+  doctorName: string
+  rating: number
+  comment: string
+  createdAt?: string
+}
+
 export function FeedbackTab() {
   const [rating, setRating] = useState(0)
   const [hoveredRating, setHoveredRating] = useState(0)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [appointments, setAppointments] = useState<AppointmentOption[]>([])
+  const [selectedAppointment, setSelectedAppointment] = useState("")
+  const [comment, setComment] = useState("")
+  const [feedback, setFeedback] = useState<FeedbackItem[]>([])
   const { toast } = useToast()
 
-  const pastAppointments = [
-    { id: 1, doctor: "Dr. Sarah Johnson", date: "2024-01-10", specialty: "Cardiology" },
-    { id: 2, doctor: "Dr. Emily Rodriguez", date: "2024-01-05", specialty: "General Medicine" },
-    { id: 3, doctor: "Dr. James Wilson", date: "2023-12-28", specialty: "Orthopedics" },
-  ]
+  const token = useMemo(() => (typeof window === "undefined" ? null : localStorage.getItem("token")), [])
+
+  useEffect(() => {
+    if (!token) return
+
+    const fetchAppointments = async () => {
+      const res = await fetch(`${API_BASE_URL}/api/patient/feedback/appointments`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      if (res.ok) {
+        const data = await res.json()
+        setAppointments(
+          data.map((item: any) => ({
+            id: item.id,
+            doctorName: item.doctorName ?? "Doctor",
+            appointmentDate: item.appointmentDate,
+            status: item.status,
+          })),
+        )
+      }
+    }
+
+    const fetchFeedback = async () => {
+      const res = await fetch(`${API_BASE_URL}/api/patient/feedback`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      if (res.ok) {
+        const data = await res.json()
+        setFeedback(data)
+      }
+    }
+
+    fetchAppointments()
+    fetchFeedback()
+  }, [token])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!selectedAppointment) {
+      toast({ title: "Pick an appointment", variant: "destructive" })
+      return
+    }
+    if (rating === 0) {
+      toast({ title: "Add a rating", variant: "destructive" })
+      return
+    }
     setIsSubmitting(true)
 
-    // Simulate submission
-    await new Promise((resolve) => setTimeout(resolve, 1000))
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/patient/feedback`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          appointmentId: selectedAppointment,
+          rating,
+          comment,
+        }),
+      })
 
-    toast({
-      title: "Feedback Submitted",
-      description: "Thank you for your feedback! It helps us improve our services.",
-    })
+      if (!res.ok) {
+        const message = await res.text()
+        throw new Error(message || "Failed to submit feedback")
+      }
 
-    setIsSubmitting(false)
-    setRating(0)
+      const newFeedback = await res.json()
+      setFeedback((prev) => [newFeedback, ...prev])
+      toast({
+        title: "Feedback submitted",
+        description: "Thank you for sharing your experience.",
+      })
+      setSelectedAppointment("")
+      setRating(0)
+      setComment("")
+    } catch (err) {
+      toast({
+        title: "Could not submit",
+        description: err instanceof Error ? err.message : "Please try again",
+        variant: "destructive",
+      })
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   const StarRating = () => (
@@ -67,7 +152,6 @@ export function FeedbackTab() {
         <p className="text-muted-foreground">Share your experience and help other patients</p>
       </div>
 
-      {/* Feedback Form */}
       <Card>
         <CardHeader>
           <CardTitle>Submit Feedback</CardTitle>
@@ -77,14 +161,14 @@ export function FeedbackTab() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="appointment">Select Appointment</Label>
-              <Select>
+              <Select value={selectedAppointment} onValueChange={setSelectedAppointment}>
                 <SelectTrigger>
                   <SelectValue placeholder="Choose a recent appointment" />
                 </SelectTrigger>
                 <SelectContent>
-                  {pastAppointments.map((appointment) => (
-                    <SelectItem key={appointment.id} value={appointment.id.toString()}>
-                      {appointment.doctor} - {appointment.date} ({appointment.specialty})
+                  {appointments.map((appointment) => (
+                    <SelectItem key={appointment.id} value={appointment.id}>
+                      {appointment.doctorName} - {appointment.appointmentDate ?? "Date TBD"}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -99,93 +183,58 @@ export function FeedbackTab() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="communication">Communication Rating</Label>
-                <Select>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Rate communication" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="5">Excellent</SelectItem>
-                    <SelectItem value="4">Very Good</SelectItem>
-                    <SelectItem value="3">Good</SelectItem>
-                    <SelectItem value="2">Fair</SelectItem>
-                    <SelectItem value="1">Poor</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="punctuality">Punctuality Rating</Label>
-                <Select>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Rate punctuality" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="5">Excellent</SelectItem>
-                    <SelectItem value="4">Very Good</SelectItem>
-                    <SelectItem value="3">Good</SelectItem>
-                    <SelectItem value="2">Fair</SelectItem>
-                    <SelectItem value="1">Poor</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
             <div className="space-y-2">
               <Label htmlFor="feedback">Your Feedback</Label>
               <Textarea
                 id="feedback"
                 placeholder="Share your experience with the doctor and the appointment..."
                 className="min-h-[120px]"
+                value={comment}
+                onChange={(e) => setComment(e.target.value)}
                 required
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="recommend">Would you recommend this doctor?</Label>
-              <Select>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select recommendation" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="yes">Yes, definitely</SelectItem>
-                  <SelectItem value="maybe">Maybe</SelectItem>
-                  <SelectItem value="no">No</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <Button type="submit" disabled={isSubmitting || rating === 0}>
+            <Button type="submit" disabled={isSubmitting || rating === 0 || !selectedAppointment}>
               {isSubmitting ? "Submitting..." : "Submit Feedback"}
             </Button>
           </form>
         </CardContent>
       </Card>
 
-      {/* Previous Feedback */}
       <Card>
         <CardHeader>
           <CardTitle>Your Previous Feedback</CardTitle>
           <CardDescription>Feedback you've submitted for past appointments</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            <div className="border-l-4 border-primary pl-4">
-              <div className="flex items-center space-x-2 mb-2">
-                <h4 className="font-semibold text-foreground">Dr. Emily Rodriguez</h4>
-                <div className="flex space-x-1">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <Star key={star} className="h-4 w-4 text-yellow-500 fill-current" />
-                  ))}
+          {feedback.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No feedback submitted yet.</p>
+          ) : (
+            <div className="space-y-4">
+              {feedback.map((item) => (
+                <div key={item.id} className="border-l-4 border-primary pl-4">
+                  <div className="flex items-center space-x-2 mb-2">
+                    <h4 className="font-semibold text-foreground">{item.doctorName}</h4>
+                    <div className="flex space-x-1">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <Star
+                          key={star}
+                          className={`h-4 w-4 ${
+                            star <= item.rating ? "text-yellow-500 fill-current" : "text-gray-300"
+                          }`}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                  <p className="text-sm text-muted-foreground mb-1">
+                    {item.createdAt ? new Date(item.createdAt).toLocaleDateString() : ""}
+                  </p>
+                  <p className="text-sm">{item.comment || "No additional comments."}</p>
                 </div>
-              </div>
-              <p className="text-sm text-muted-foreground mb-1">January 5, 2024 • General Medicine</p>
-              <p className="text-sm">
-                "Excellent doctor! Very thorough examination and clear explanations. Highly recommend."
-              </p>
+              ))}
             </div>
-          </div>
+          )}
         </CardContent>
       </Card>
     </div>

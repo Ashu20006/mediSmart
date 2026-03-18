@@ -46,6 +46,8 @@ export function PatientSidebar({ activeTab, onTabChange, isOpen, onClose }: Pati
     { id: "appointments", label: "My Appointments", icon: Calendar },
     { id: "prescriptions", label: "Prescriptions", icon: FileText },
     { id: "feedback", label: "Doctor Feedback", icon: MessageSquare },
+    { id: "profile", label: "Profile Settings", icon: User },
+    { id: "account", label: "Account Settings", icon: Settings },
   ]
 
   useEffect(() => {
@@ -184,14 +186,6 @@ export function PatientSidebar({ activeTab, onTabChange, isOpen, onClose }: Pati
 
           {/* Account Actions */}
           <div className="space-y-2 pt-4 border-t border-border">
-            <Button variant="ghost" className="w-full justify-start">
-              <User className="h-4 w-4 mr-3" />
-              Profile Settings
-            </Button>
-            <Button variant="ghost" className="w-full justify-start">
-              <Settings className="h-4 w-4 mr-3" />
-              Account Settings
-            </Button>
             <Button
               variant="ghost"
               className="w-full justify-start text-destructive hover:text-destructive"

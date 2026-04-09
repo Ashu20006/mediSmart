@@ -2,7 +2,7 @@
 Full-stack telehealth app: Spring Boot API + Next.js frontend with JWT auth, appointments, doctor recommendations, medical records, password reset/OTP email, and live consultations (Agora video + STOMP chat).
 
 ## Live links
- https://medi-smart-frontend-swart.vercel.app
+ https://medi-smart-eta.vercel.app
 
 ## Repository layout
 - MediSmart-Backend/   - Spring Boot 3.5 service (MongoDB, Security/JWT, WebSocket/STOMP, Agora token generation).
